@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, Smartphone } from 'lucide-react';
 import axios from '../api/axios';
 import { useCart } from '../context/CartContext';
 import './Checkout.css';
@@ -16,8 +16,12 @@ const Checkout = () => {
     shipping_city: '',
     shipping_postal_code: '',
     shipping_country: '',
-    payment_method: 'Card',
+    payment_method: 'PayHero',
+    phone_number: '',
   });
+  const [orderId, setOrderId] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -33,7 +37,11 @@ const Checkout = () => {
 
     try {
       const orderData = {
-        ...formData,
+        shipping_address: formData.shipping_address,
+        shipping_city: formData.shipping_city,
+        shipping_postal_code: formData.shipping_postal_code,
+        shipping_country: formData.shipping_country,
+        payment_method: formData.payment_method,
         items: cart.items.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -41,13 +49,93 @@ const Checkout = () => {
         })),
       };
 
-      await axios.post('/orders/orders/', orderData);
-      navigate('/orders');
+      const response = await axios.post('/orders/orders/', orderData);
+      const createdOrderId = response.data.id;
+      setOrderId(createdOrderId);
+
+      // If PayHero payment, initiate payment
+      if (formData.payment_method === 'PayHero') {
+        if (!formData.phone_number) {
+          setError('Please enter your M-Pesa phone number');
+          setLoading(false);
+          return;
+        }
+        setShowPaymentModal(true);
+        await initiatePayHeroPayment(createdOrderId);
+      } else {
+        navigate('/orders');
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create order');
     } finally {
       setLoading(false);
     }
+  };
+
+  const initiatePayHeroPayment = async (orderIdToUse) => {
+    try {
+      setPaymentStatus('Initiating PayHero payment...');
+      
+      const response = await axios.post('/payments/initiate_payhero/', {
+        order_id: orderIdToUse,
+        phone_number: formData.phone_number,
+      });
+
+      if (response.data.success) {
+        setPaymentStatus('Please check your phone and enter your M-Pesa PIN');
+        
+        // Poll for payment status
+        const paymentId = response.data.payment_id;
+        pollPaymentStatus(paymentId);
+      } else {
+        setPaymentStatus('Failed to initiate payment');
+        setError(response.data.message);
+      }
+    } catch (err) {
+      setPaymentStatus('Payment initiation failed');
+      setError(err.response?.data?.detail || 'Failed to initiate PayHero payment');
+    }
+  };
+
+  const pollPaymentStatus = async (paymentId) => {
+    let attempts = 0;
+    const maxAttempts = 30; // Poll for 1 minute (30 * 2 seconds)
+
+    const checkStatus = async () => {
+      try {
+        const response = await axios.get(`/payments/${paymentId}/check_status/`);
+        
+        if (response.data.status === 'completed') {
+          setPaymentStatus('Payment successful! Redirecting...');
+          setTimeout(() => {
+            navigate('/orders');
+          }, 2000);
+          return;
+        } else if (response.data.status === 'failed') {
+          setPaymentStatus('Payment failed. Please try again.');
+          setError('Payment was not completed');
+          return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 2000); // Check every 2 seconds
+        } else {
+          setPaymentStatus('Payment timeout. Please check your orders.');
+          setTimeout(() => {
+            navigate('/orders');
+          }, 3000);
+        }
+      } catch (err) {
+        console.error('Status check error:', err);
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 2000);
+        }
+      }
+    };
+
+    checkStatus();
   };
 
   if (!cart.items || cart.items.length === 0) {
@@ -132,23 +220,24 @@ const Checkout = () => {
                   <input
                     type="radio"
                     name="payment_method"
-                    value="Card"
-                    checked={formData.payment_method === 'Card'}
+                    value="PayHero"
+                    checked={formData.payment_method === 'PayHero'}
                     onChange={handleChange}
                   />
-                  <CreditCard size={20} />
-                  <span>Credit/Debit Card</span>
+                  <Smartphone size={20} />
+                  <span>PayHero M-Pesa (STK Push)</span>
                 </label>
 
                 <label className="payment-option">
                   <input
                     type="radio"
                     name="payment_method"
-                    value="PayPal"
-                    checked={formData.payment_method === 'PayPal'}
+                    value="Card"
+                    checked={formData.payment_method === 'Card'}
                     onChange={handleChange}
                   />
-                  <span>PayPal</span>
+                  <CreditCard size={20} />
+                  <span>Credit/Debit Card</span>
                 </label>
 
                 <label className="payment-option">
@@ -162,12 +251,51 @@ const Checkout = () => {
                   <span>Cash on Delivery</span>
                 </label>
               </div>
+
+              {formData.payment_method === 'PayHero' && (
+                <div className="form-group" style={{ marginTop: '1rem' }}>
+                  <label className="label">M-Pesa Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="254XXXXXXXXX or 07XXXXXXXX"
+                    required
+                  />
+                  <small style={{ color: '#666', fontSize: '0.875rem' }}>
+                    Enter your M-Pesa registered phone number
+                  </small>
+                </div>
+              )}
             </div>
 
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-              {loading ? 'Placing Order...' : 'Place Order'}
+              {loading ? 'Processing...' : formData.payment_method === 'M-Pesa' ? 'Pay with M-Pesa' : 'Place Order'}
             </button>
           </form>
+
+          {showPaymentModal && (
+            <div className="payment-modal">
+              <div className="payment-modal-content">
+                <h3>M-Pesa Payment</h3>
+                <div className="payment-status">
+                  <Smartphone size={48} color="#4CAF50" />
+                  <p>{paymentStatus}</p>
+                  {paymentStatus.includes('check your phone') && (
+                    <div className="payment-instructions">
+                      <ol>
+                        <li>Check your phone for M-Pesa prompt</li>
+                        <li>Enter your M-Pesa PIN</li>
+                        <li>Wait for confirmation</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="order-summary">
             <h2>Order Summary</h2>

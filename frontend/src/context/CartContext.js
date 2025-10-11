@@ -39,16 +39,19 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = async (productId, quantity = 1) => {
     try {
+      console.log('Adding to cart:', { productId, quantity });
       const response = await axios.post('/orders/cart/add_item/', {
         product_id: productId,
         quantity,
       });
+      console.log('Cart response:', response.data);
       setCart(response.data);
-      return { success: true };
+      return { success: true, message: 'Product added to cart!' };
     } catch (error) {
+      console.error('Add to cart error:', error.response?.data || error.message);
       return {
         success: false,
-        error: error.response?.data?.detail || 'Failed to add to cart',
+        error: error.response?.data?.detail || error.message || 'Failed to add to cart',
       };
     }
   };
