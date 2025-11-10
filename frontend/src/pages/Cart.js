@@ -1,9 +1,9 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
-import './Cart.css';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import "./Cart.css";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -23,17 +23,24 @@ const Cart = () => {
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
-    navigate('/checkout');
+    navigate("/checkout");
   };
 
   if (!isAuthenticated) {
     return (
-      <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>
+      <div
+        className="container"
+        style={{ padding: "2rem", textAlign: "center" }}
+      >
         <h2>Please login to view your cart</h2>
-        <button onClick={() => navigate('/login')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+        <button
+          onClick={() => navigate("/login")}
+          className="btn btn-primary"
+          style={{ marginTop: "1rem" }}
+        >
           Login
         </button>
       </div>
@@ -41,7 +48,14 @@ const Cart = () => {
   }
 
   if (loading) {
-    return <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>Loading cart...</div>;
+    return (
+      <div
+        className="container"
+        style={{ padding: "2rem", textAlign: "center" }}
+      >
+        Loading cart...
+      </div>
+    );
   }
 
   if (!cart.items || cart.items.length === 0) {
@@ -51,7 +65,7 @@ const Cart = () => {
           <ShoppingBag size={64} color="#9ca3af" />
           <h2>Your cart is empty</h2>
           <p>Add some products to get started!</p>
-          <button onClick={() => navigate('/')} className="btn btn-primary">
+          <button onClick={() => navigate("/")} className="btn btn-primary">
             Continue Shopping
           </button>
         </div>
@@ -79,22 +93,30 @@ const Cart = () => {
                 <div className="cart-item-details">
                   <h3>{item.product.name}</h3>
                   {item.product.category && (
-                    <span className="product-category">{item.product.category.name}</span>
+                    <span className="product-category">
+                      {item.product.category.name}
+                    </span>
                   )}
-                  <p className="cart-item-price">${parseFloat(item.price).toFixed(2)}</p>
+                  <p className="cart-item-price">
+                    KSh {parseFloat(item.price).toFixed(2)}
+                  </p>
                 </div>
 
                 <div className="cart-item-actions">
                   <div className="quantity-controls">
                     <button
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity, -1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item.id, item.quantity, -1)
+                      }
                       className="quantity-btn"
                     >
                       <Minus size={16} />
                     </button>
                     <span className="quantity-value">{item.quantity}</span>
                     <button
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity, 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item.id, item.quantity, 1)
+                      }
                       className="quantity-btn"
                       disabled={item.quantity >= item.product.stock}
                     >
@@ -111,7 +133,7 @@ const Cart = () => {
                 </div>
 
                 <div className="cart-item-total">
-                  ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                  KSh {(parseFloat(item.price) * item.quantity).toFixed(2)}
                 </div>
               </div>
             ))}
@@ -121,7 +143,7 @@ const Cart = () => {
             <h2>Order Summary</h2>
             <div className="summary-row">
               <span>Subtotal</span>
-              <span>${parseFloat(cart.total_price).toFixed(2)}</span>
+              <span>KSh {parseFloat(cart.total_price).toFixed(2)}</span>
             </div>
             <div className="summary-row">
               <span>Shipping</span>
@@ -129,12 +151,18 @@ const Cart = () => {
             </div>
             <div className="summary-total">
               <span>Total</span>
-              <span>${parseFloat(cart.total_price).toFixed(2)}</span>
+              <span>KSh {parseFloat(cart.total_price).toFixed(2)}</span>
             </div>
-            <button onClick={handleCheckout} className="btn btn-primary btn-block">
+            <button
+              onClick={handleCheckout}
+              className="btn btn-primary btn-block"
+            >
               Proceed to Checkout
             </button>
-            <button onClick={() => navigate('/')} className="btn btn-outline btn-block">
+            <button
+              onClick={() => navigate("/")}
+              className="btn btn-outline btn-block"
+            >
               Continue Shopping
             </button>
           </div>

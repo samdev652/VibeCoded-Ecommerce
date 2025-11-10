@@ -1,26 +1,25 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CreditCard, Smartphone } from 'lucide-react';
-import axios from '../api/axios';
-import { useCart } from '../context/CartContext';
-import './Checkout.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Smartphone } from "lucide-react";
+import axios from "../api/axios";
+import { useCart } from "../context/CartContext";
+import "./Checkout.css";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { cart } = useCart();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState("");
+
   const [formData, setFormData] = useState({
-    shipping_address: '',
-    shipping_city: '',
-    shipping_postal_code: '',
-    shipping_country: '',
-    payment_method: 'PayHero',
-    phone_number: '',
+    shipping_address: "",
+    shipping_city: "",
+    shipping_postal_code: "",
+    shipping_country: "",
+    payment_method: "M-Pesa",
+    phone_number: "",
   });
-  const [orderId, setOrderId] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const handleChange = (e) => {
@@ -32,7 +31,7 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
@@ -42,58 +41,59 @@ const Checkout = () => {
         shipping_postal_code: formData.shipping_postal_code,
         shipping_country: formData.shipping_country,
         payment_method: formData.payment_method,
-        items: cart.items.map(item => ({
+        items: cart.items.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
           price: item.price,
         })),
       };
 
-      const response = await axios.post('/orders/orders/', orderData);
+      const response = await axios.post("/orders/orders/", orderData);
       const createdOrderId = response.data.id;
-      setOrderId(createdOrderId);
 
-      // If PayHero payment, initiate payment
-      if (formData.payment_method === 'PayHero') {
-        if (!formData.phone_number) {
-          setError('Please enter your M-Pesa phone number');
-          setLoading(false);
-          return;
-        }
-        setShowPaymentModal(true);
-        await initiatePayHeroPayment(createdOrderId);
-      } else {
-        navigate('/orders');
+      // Initiate M-Pesa payment
+      if (!formData.phone_number) {
+        setError("Please enter your M-Pesa phone number");
+        setLoading(false);
+        return;
       }
+      setShowPaymentModal(true);
+      await initiateMPesaPayment(createdOrderId);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create order');
+      setError(err.response?.data?.detail || "Failed to create order");
     } finally {
       setLoading(false);
     }
   };
 
-  const initiatePayHeroPayment = async (orderIdToUse) => {
+  const initiateMPesaPayment = async (orderIdToUse) => {
     try {
-      setPaymentStatus('Initiating PayHero payment...');
-      
-      const response = await axios.post('/payments/initiate_payhero/', {
+      setPaymentStatus("Initiating M-Pesa payment...");
+
+      const response = await axios.post("/payments/initiate_mpesa/", {
         order_id: orderIdToUse,
         phone_number: formData.phone_number,
       });
 
       if (response.data.success) {
-        setPaymentStatus('Please check your phone and enter your M-Pesa PIN');
-        
+        setPaymentStatus(
+          "STK Push sent! Please check your phone and enter your M-Pesa PIN to complete payment."
+        );
+
         // Poll for payment status
         const paymentId = response.data.payment_id;
         pollPaymentStatus(paymentId);
       } else {
-        setPaymentStatus('Failed to initiate payment');
+        setPaymentStatus("Failed to initiate payment");
         setError(response.data.message);
       }
     } catch (err) {
-      setPaymentStatus('Payment initiation failed');
-      setError(err.response?.data?.detail || 'Failed to initiate PayHero payment');
+      setPaymentStatus("Payment initiation failed");
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.detail ||
+          "Failed to initiate M-Pesa payment"
+      );
     }
   };
 
@@ -103,17 +103,19 @@ const Checkout = () => {
 
     const checkStatus = async () => {
       try {
-        const response = await axios.get(`/payments/${paymentId}/check_status/`);
-        
-        if (response.data.status === 'completed') {
-          setPaymentStatus('Payment successful! Redirecting...');
+        const response = await axios.get(
+          `/payments/${paymentId}/check_status/`
+        );
+
+        if (response.data.status === "completed") {
+          setPaymentStatus("Payment successful! Redirecting...");
           setTimeout(() => {
-            navigate('/orders');
+            navigate("/orders");
           }, 2000);
           return;
-        } else if (response.data.status === 'failed') {
-          setPaymentStatus('Payment failed. Please try again.');
-          setError('Payment was not completed');
+        } else if (response.data.status === "failed") {
+          setPaymentStatus("Payment failed. Please try again.");
+          setError("Payment was not completed");
           return;
         }
 
@@ -121,13 +123,13 @@ const Checkout = () => {
         if (attempts < maxAttempts) {
           setTimeout(checkStatus, 2000); // Check every 2 seconds
         } else {
-          setPaymentStatus('Payment timeout. Please check your orders.');
+          setPaymentStatus("Payment timeout. Please check your orders.");
           setTimeout(() => {
-            navigate('/orders');
+            navigate("/orders");
           }, 3000);
         }
       } catch (err) {
-        console.error('Status check error:', err);
+        console.error("Status check error:", err);
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(checkStatus, 2000);
@@ -140,9 +142,16 @@ const Checkout = () => {
 
   if (!cart.items || cart.items.length === 0) {
     return (
-      <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>
+      <div
+        className="container"
+        style={{ padding: "2rem", textAlign: "center" }}
+      >
         <h2>Your cart is empty</h2>
-        <button onClick={() => navigate('/')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+        <button
+          onClick={() => navigate("/")}
+          className="btn btn-primary"
+          style={{ marginTop: "1rem" }}
+        >
           Continue Shopping
         </button>
       </div>
@@ -160,7 +169,7 @@ const Checkout = () => {
           <form onSubmit={handleSubmit} className="checkout-form">
             <div className="form-section">
               <h2>Shipping Information</h2>
-              
+
               <div className="form-group">
                 <label className="label">Address</label>
                 <input
@@ -214,65 +223,44 @@ const Checkout = () => {
 
             <div className="form-section">
               <h2>Payment Method</h2>
-              
+
               <div className="payment-methods">
                 <label className="payment-option">
                   <input
                     type="radio"
                     name="payment_method"
-                    value="PayHero"
-                    checked={formData.payment_method === 'PayHero'}
+                    value="M-Pesa"
+                    checked={formData.payment_method === "M-Pesa"}
                     onChange={handleChange}
                   />
                   <Smartphone size={20} />
-                  <span>PayHero M-Pesa (STK Push)</span>
-                </label>
-
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    value="Card"
-                    checked={formData.payment_method === 'Card'}
-                    onChange={handleChange}
-                  />
-                  <CreditCard size={20} />
-                  <span>Credit/Debit Card</span>
-                </label>
-
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    value="Cash"
-                    checked={formData.payment_method === 'Cash'}
-                    onChange={handleChange}
-                  />
-                  <span>Cash on Delivery</span>
+                  <span>M-Pesa (STK Push)</span>
                 </label>
               </div>
 
-              {formData.payment_method === 'PayHero' && (
-                <div className="form-group" style={{ marginTop: '1rem' }}>
-                  <label className="label">M-Pesa Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    className="input"
-                    placeholder="254XXXXXXXXX or 07XXXXXXXX"
-                    required
-                  />
-                  <small style={{ color: '#666', fontSize: '0.875rem' }}>
-                    Enter your M-Pesa registered phone number
-                  </small>
-                </div>
-              )}
+              <div className="form-group" style={{ marginTop: "1rem" }}>
+                <label className="label">M-Pesa Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="254XXXXXXXXX or 07XXXXXXXX"
+                  required
+                />
+                <small style={{ color: "#666", fontSize: "0.875rem" }}>
+                  Enter your M-Pesa registered phone number
+                </small>
+              </div>
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-              {loading ? 'Processing...' : formData.payment_method === 'M-Pesa' ? 'Pay with M-Pesa' : 'Place Order'}
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Pay with M-Pesa"}
             </button>
           </form>
 
@@ -283,7 +271,7 @@ const Checkout = () => {
                 <div className="payment-status">
                   <Smartphone size={48} color="#4CAF50" />
                   <p>{paymentStatus}</p>
-                  {paymentStatus.includes('check your phone') && (
+                  {paymentStatus.includes("check your phone") && (
                     <div className="payment-instructions">
                       <ol>
                         <li>Check your phone for M-Pesa prompt</li>
@@ -299,16 +287,18 @@ const Checkout = () => {
 
           <div className="order-summary">
             <h2>Order Summary</h2>
-            
+
             <div className="summary-items">
               {cart.items.map((item) => (
                 <div key={item.id} className="summary-item">
                   <div className="summary-item-info">
-                    <span className="summary-item-name">{item.product.name}</span>
+                    <span className="summary-item-name">
+                      {item.product.name}
+                    </span>
                     <span className="summary-item-qty">x{item.quantity}</span>
                   </div>
                   <span className="summary-item-price">
-                    ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                    KSh {(parseFloat(item.price) * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -317,7 +307,7 @@ const Checkout = () => {
             <div className="summary-totals">
               <div className="summary-row">
                 <span>Subtotal</span>
-                <span>${parseFloat(cart.total_price).toFixed(2)}</span>
+                <span>KSh {parseFloat(cart.total_price).toFixed(2)}</span>
               </div>
               <div className="summary-row">
                 <span>Shipping</span>
@@ -325,7 +315,7 @@ const Checkout = () => {
               </div>
               <div className="summary-total">
                 <span>Total</span>
-                <span>${parseFloat(cart.total_price).toFixed(2)}</span>
+                <span>KSh {parseFloat(cart.total_price).toFixed(2)}</span>
               </div>
             </div>
           </div>

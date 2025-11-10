@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Calendar, DollarSign } from 'lucide-react';
-import axios from '../api/axios';
-import './Orders.css';
+import React, { useState, useEffect } from "react";
+import { Package, Calendar, DollarSign } from "lucide-react";
+import axios from "../api/axios";
+import "./Orders.css";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -13,10 +13,10 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get('/orders/orders/');
+      const response = await axios.get("/orders/orders/");
       setOrders(response.data.results || response.data);
     } catch (error) {
-      console.error('Failed to fetch orders:', error);
+      console.error("Failed to fetch orders:", error);
     } finally {
       setLoading(false);
     }
@@ -24,18 +24,21 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: '#f59e0b',
-      processing: '#3b82f6',
-      shipped: '#8b5cf6',
-      delivered: '#10b981',
-      cancelled: '#ef4444',
+      pending: "#f59e0b",
+      processing: "#3b82f6",
+      shipped: "#8b5cf6",
+      delivered: "#10b981",
+      cancelled: "#ef4444",
     };
-    return colors[status] || '#6b7280';
+    return colors[status] || "#6b7280";
   };
 
   if (loading) {
     return (
-      <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>
+      <div
+        className="container"
+        style={{ padding: "2rem", textAlign: "center" }}
+      >
         Loading orders...
       </div>
     );
@@ -73,13 +76,14 @@ const Orders = () => {
                       className="order-status"
                       style={{ backgroundColor: getStatusColor(order.status) }}
                     >
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      {order.status.charAt(0).toUpperCase() +
+                        order.status.slice(1)}
                     </span>
                   </div>
                 </div>
                 <div className="order-total">
                   <DollarSign size={20} />
-                  <span>${parseFloat(order.total_price).toFixed(2)}</span>
+                  <span>KSh {parseFloat(order.total_price).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -97,7 +101,7 @@ const Orders = () => {
                       <h4>{item.product.name}</h4>
                       <p>Quantity: {item.quantity}</p>
                       <p className="order-item-price">
-                        ${parseFloat(item.price).toFixed(2)} each
+                        KSh {parseFloat(item.price).toFixed(2)} each
                       </p>
                     </div>
                   </div>
@@ -115,8 +119,8 @@ const Orders = () => {
 
               <div className="order-payment">
                 <span>Payment Method: {order.payment_method}</span>
-                <span className={order.is_paid ? 'paid' : 'unpaid'}>
-                  {order.is_paid ? 'Paid' : 'Unpaid'}
+                <span className={order.is_paid ? "paid" : "unpaid"}>
+                  {order.is_paid ? "Paid" : "Unpaid"}
                 </span>
               </div>
             </div>
