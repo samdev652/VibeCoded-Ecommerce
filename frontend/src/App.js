@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
+import Chatbot from './components/Chatbot';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
@@ -51,6 +52,7 @@ function App() {
                 }
               />
             </Routes>
+            <Chatbot />
           </div>
         </CartProvider>
       </AuthProvider>
