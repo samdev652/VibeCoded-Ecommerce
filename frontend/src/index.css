@@ -5,27 +5,26 @@
 }
 
 :root {
-  --primary-color: #16a34a;
-  --primary-dark: #15803d;
-  --primary-light: #22c55e;
-  --secondary-color: #ea580c;
-  --secondary-dark: #c2410c;
-  --background: #f8fafc;
+  --primary-color: #ff9900;
+  --primary-dark: #e88b00;
+  --primary-light: #ffac31;
+  --secondary-color: #232f3e;
+  --secondary-dark: #131921;
+  --background: #eaeded;
   --surface: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --border-color: #e2e8f0;
+  --text-primary: #0f1111;
+  --text-secondary: #565959;
+  --border-color: #d5d9d9;
+  --accent-blue: #007185;
+  --accent-blue-hover: #005a6e;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 5px 0 rgba(213, 217, 217, 0.5);
+  --shadow-lg: 0 4px 8px 0 rgba(213, 217, 217, 0.5);
+  --shadow-xl: 0 8px 16px 0 rgba(213, 217, 217, 0.5);
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+  font-family: "Amazon Ember", "Roboto", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -72,29 +71,23 @@ code {
 }
 
 .btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color) 0%,
-    var(--primary-dark) 100%
-  );
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--secondary-dark);
+  font-weight: 500;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, #166534 100%);
+  background-color: var(--primary-dark);
 }
 
 .btn-secondary {
-  background: linear-gradient(
-    135deg,
-    var(--secondary-color) 0%,
-    var(--secondary-dark) 100%
-  );
+  background-color: var(--secondary-color);
   color: white;
+  font-weight: 500;
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, var(--secondary-dark) 0%, #9a3412 100%);
+  background-color: var(--secondary-dark);
 }
 
 .btn-danger {
